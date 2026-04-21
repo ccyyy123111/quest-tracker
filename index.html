@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="任务打怪">
+<title>任务打怪系统</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB',sans-serif;background:#f5f5f0;color:#1a1a1a;min-height:100vh;}
+.app{max-width:420px;margin:0 auto;padding:12px;padding-bottom:80px;}
+.header{text-align:center;padding:20px 0 14px;margin-bottom:16px;}
+.header h1{font-size:22px;font-weight:600;color:#1a1a1a;letter-spacing:0.05em;}
+.header .sub{font-size:12px;color:#888;margin-top:4px;}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
+.stat-card{background:#fff;border-radius:12px;padding:12px 8px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.06);}
+.stat-label{font-size:11px;color:#999;margin-bottom:4px;}
+.stat-value{font-size:20px;font-weight:600;color:#1a1a1a;}
+.stat-value.gold{color:#d4870a;}
+.tabs{display:flex;gap:0;margin-bottom:16px;background:#fff;border-radius:12px;padding:4px;box-shadow:0 1px 3px rgba(0,0,0,0.06);}
+.tab{flex:1;text-align:center;padding:8px 4px;font-size:12px;border-radius:8px;cursor:pointer;color:#999;border:none;background:transparent;transition:all 0.2s;}
+.tab.active{background:#1a1a1a;color:#fff;font-weight:500;}
+.section{display:none;}
+.section.active{display:block;}
+.section-title{font-size:11px;font-weight:600;color:#999;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.08em;}
+.card{background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,0.06);}
+.task-item{background:#fff;border-radius:12px;padding:12px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px;box-shadow:0 1px 3px rgba(0,0,0,0.06);}
+.task-check{width:22px;height:22px;border-radius:50%;border:2px solid #ddd;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;margin-top:1px;transition:all 0.2s;}
+.task-check.done{background:#2ecc87;border-color:#2ecc87;color:#fff;}
+.task-info{flex:1;min-width:0;}
+.task-name{font-size:14px;color:#1a1a1a;line-height:1.4;}
+.task-name.done{text-decoration:line-through;color:#bbb;}
+.task-meta{font-size:11px;color:#d4870a;margin-top:3px;font-weight:500;}
+.task-delete{font-size:18px;color:#ccc;cursor:pointer;background:none;border:none;padding:2px 4px;line-height:1;flex-shrink:0;}
+.form-group{margin-bottom:10px;}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 12px;border:1.5px solid #eee;border-radius:10px;background:#fafafa;color:#1a1a1a;font-size:14px;outline:none;transition:border 0.2s;}
+.form-group input:focus,.form-group select:focus{border-color:#1a1a1a;}
+.form-row{display:flex;gap:8px;}
+.form-row .form-group{flex:1;}
+.btn{padding:10px 16px;border-radius:10px;border:1.5px solid #eee;background:#fff;color:#1a1a1a;font-size:14px;cursor:pointer;font-weight:500;transition:all 0.15s;}
+.btn:active{transform:scale(0.97);}
+.btn-primary{background:#1a1a1a;border-color:#1a1a1a;color:#fff;}
+.btn-sm{padding:7px 12px;font-size:12px;}
+.btn-full{width:100%;}
+.btn-danger{background:#ff4757;border-color:#ff4757;color:#fff;}
+.monster-area{text-align:center;padding:10px 0 20px;}
+.monster-emoji{font-size:64px;margin-bottom:10px;display:block;line-height:1;}
+.monster-name{font-size:17px;font-weight:600;color:#1a1a1a;margin-bottom:4px;}
+.monster-level{font-size:12px;color:#999;margin-bottom:14px;}
+.hp-bar-wrap{background:#f0f0f0;border-radius:8px;height:10px;overflow:hidden;margin-bottom:6px;}
+.hp-bar{height:100%;border-radius:8px;transition:width 0.6s ease;}
+.hp-text{font-size:12px;color:#999;}
+.monster-reward{font-size:12px;color:#d4870a;margin-top:6px;font-weight:500;}
+.shop-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+.shop-item{background:#fff;border-radius:12px;padding:12px 10px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.06);}
+.shop-icon{font-size:30px;margin-bottom:6px;display:block;}
+.shop-name{font-size:12px;font-weight:600;color:#1a1a1a;margin-bottom:3px;line-height:1.3;}
+.shop-desc{font-size:10px;color:#999;margin-bottom:8px;line-height:1.4;}
+.shop-price{font-size:13px;color:#d4870a;font-weight:600;margin-bottom:8px;}
+.timer-display{text-align:center;padding:24px 0 20px;}
+.timer-clock{font-size:56px;font-weight:300;color:#1a1a1a;font-variant-numeric:tabular-nums;letter-spacing:0.02em;}
+.timer-status{font-size:13px;color:#999;margin-top:8px;}
+.timer-controls{display:flex;gap:8px;justify-content:center;margin-top:16px;}
+.timer-presets{display:flex;gap:8px;margin-top:12px;}
+.timer-presets .btn{flex:1;font-size:12px;}
+.divider{height:1px;background:#f0f0f0;margin:16px 0;}
+.empty{text-align:center;color:#bbb;font-size:13px;padding:24px 0;}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;display:none;align-items:center;justify-content:center;}
+.overlay.show{display:flex;}
+.popup{background:#fff;border-radius:20px;padding:28px 24px;text-align:center;max-width:280px;width:90%;}
+.popup-icon{font-size:52px;margin-bottom:12px;display:block;}
+.popup-title{font-size:18px;font-weight:600;color:#1a1a1a;margin-bottom:6px;}
+.popup-sub{font-size:14px;color:#888;margin-bottom:20px;line-height:1.5;}
+.bottom-safe{height:20px;}
+</style>
+</head>
+<body>
+
+<div id="overlay" class="overlay">
+  <div class="popup">
+    <span id="popup-icon" class="popup-icon">🎁</span>
+    <div id="popup-title" class="popup-title">任务完成！</div>
+    <div id="popup-sub" class="popup-sub">+10 金币</div>
+    <button class="btn btn-primary" onclick="closePopup()" style="width:100%">收下</button>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+
+<div class="app">
+  <div class="header">
+    <h1>✦ 任务打怪 ✦</h1>
+    <div class="sub">完成任务 · 打败怪物 · 兑换奖励</div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">金币</div>
+      <div class="stat-value gold" id="s-coins">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">今日完成</div>
+      <div class="stat-value" id="s-done">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">连续天数</div>
+      <div class="stat-value" id="s-streak">0</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('tasks')">任务</button>
+    <button class="tab" onclick="switchTab('monster')">打怪</button>
+    <button class="tab" onclick="switchTab('timer')">计时</button>
+    <button class="tab" onclick="switchTab('shop')">商城</button>
+  </div>
+
+  <!-- TASKS -->
+  <div id="sec-tasks" class="section active">
+    <div class="section-title">每日任务</div>
+    <div id="daily-list"></div>
+    <div class="divider"></div>
+    <div class="section-title">待办清单</div>
+    <div id="todo-list"></div>
+    <div class="divider"></div>
+    <div class="section-title">添加任务</div>
+    <div class="card">
+      <div class="form-group"><input type="text" id="new-name" placeholder="任务名称..."/></div>
+      <div class="form-row">
+        <div class="form-group">
+          <select id="new-type">
+            <option value="daily">每日任务</option>
+            <option value="todo">待办事项</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <input type="number" id="new-coins" placeholder="金币" value="10" min="1" max="999"/>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="addTask()">+ 添加任务</button>
+    </div>
+  </div>
+
+  <!-- MONSTER -->
+  <div id="sec-monster" class="section">
+    <div class="card">
+      <div class="monster-area">
+        <span class="monster-emoji" id="m-emoji">👾</span>
+        <div class="monster-name" id="m-name">加载中...</div>
+        <div class="monster-level" id="m-level">Lv.1</div>
+        <div class="hp-bar-wrap"><div class="hp-bar" id="m-hpbar" style="width:100%;background:#ff4757;"></div></div>
+        <div class="hp-text" id="m-hptext">HP: 100/100</div>
+        <div class="monster-reward" id="m-reward">击败奖励: +20金币</div>
+      </div>
+    </div>
+    <div class="card" style="text-align:center;">
+      <div style="font-size:13px;color:#999;line-height:1.7;">完成任务对怪物造成伤害<br>打败怪物获得丰厚奖励！<br>随机掉落神秘道具～</div>
+    </div>
+  </div>
+
+  <!-- TIMER -->
+  <div id="sec-timer" class="section">
+    <div class="card">
+      <div class="form-group">
+        <select id="timer-task">
+          <option value="">选择关联任务（可选）</option>
+        </select>
+      </div>
+      <div class="timer-display">
+        <div class="timer-clock" id="t-clock">20:00</div>
+        <div class="timer-status" id="t-status">准备开始</div>
+      </div>
+      <div class="timer-controls">
+        <button class="btn" onclick="resetTimer()">重置</button>
+        <button class="btn btn-primary" id="t-btn" onclick="toggleTimer()">开始</button>
+      </div>
+      <div class="timer-presets">
+        <button class="btn btn-sm" onclick="setTimer(20)">20分钟</button>
+        <button class="btn btn-sm" onclick="setTimer(25)">25分钟</button>
+        <button class="btn btn-sm" onclick="setTimer(45)">45分钟</button>
+        <button class="btn btn-sm" onclick="setTimer(60)">1小时</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SHOP -->
+  <div id="sec-shop" class="section">
+    <div class="section-title">商城</div>
+    <div class="shop-grid" id="shop-grid"></div>
+    <div class="divider"></div>
+    <div class="section-title">添加自定义奖励</div>
+    <div class="card">
+      <div class="form-group"><input type="text" id="r-name" placeholder="奖励名称..."/></div>
+      <div class="form-row">
+        <div class="form-group"><input type="text" id="r-icon" placeholder="emoji图标"/></div>
+        <div class="form-group"><input type="number" id="r-price" placeholder="价格" value="30"/></div>
+      </div>
+      <div class="form-group"><input type="text" id="r-desc" placeholder="描述..."/></div>
+      <button class="btn btn-primary btn-full" onclick="addReward()">+ 添加奖励</button>
+    </div>
+  </div>
+
+  <div class="bottom-safe"></div>
+</div>
+
+<script>
+const MONSTERS = [
+  {emoji:'👾',name:'拖延症小妖',level:'Lv.1',hp:60,reward:12,drop:'普通宝箱'},
+  {emoji:'😫',name:'焦虑大怪兽',level:'Lv.2',hp:100,reward:20,drop:'银色宝箱'},
+  {emoji:'📱',name:'手机控制者',level:'Lv.2',hp:80,reward:15,drop:'普通宝箱'},
+  {emoji:'😴',name:'懒惰精灵',level:'Lv.1',hp:50,reward:10,drop:'普通宝箱'},
+  {emoji:'📚',name:'论文魔王',level:'Lv.5',hp:300,reward:80,drop:'金色宝箱'},
+  {emoji:'⏰',name:'时间管理鬼',level:'Lv.3',hp:150,reward:35,drop:'银色宝箱'},
+  {emoji:'🥱',name:'困意侵袭者',level:'Lv.2',hp:90,reward:18,drop:'普通宝箱'},
+  {emoji:'🍔',name:'垃圾食品魔',level:'Lv.2',hp:80,reward:15,drop:'普通宝箱'},
+  {emoji:'💸',name:'冲动消费鬼',level:'Lv.3',hp:120,reward:25,drop:'银色宝箱'},
+  {emoji:'🌙',name:'熬夜恶魔',level:'Lv.3',hp:130,reward:28,drop:'银色宝箱'},
+  {emoji:'😰',name:'内耗精灵',level:'Lv.4',hp:200,reward:50,drop:'金色宝箱'},
+  {emoji:'🎮',name:'游戏诱惑者',level:'Lv.2',hp:100,reward:20,drop:'普通宝箱'},
+  {emoji:'🛌',name:'赖床大魔王',level:'Lv.1',hp:60,reward:12,drop:'普通宝箱'},
+  {emoji:'📺',name:'刷剧怪兽',level:'Lv.2',hp:90,reward:18,drop:'普通宝箱'},
+  {emoji:'🍩',name:'甜食诱惑精',level:'Lv.1',hp:70,reward:14,drop:'普通宝箱'},
+];
+
+const DROPS = {
+  '普通宝箱': ['🍬糖果一颗','🎲随机小奖','⭐小星星','🌸花瓣礼','🍀幸运草'],
+  '银色宝箱': ['🧋一杯奶茶','😴睡懒觉特权','📱刷手机30分钟','🎵音乐放空时光','🛍️买个小东西'],
+  '金色宝箱': ['🎬看一部电影','🍜点一顿好吃的','💆按摩放松','☕咖啡馆自习','💅美甲特权'],
+};
+
+const SHOP = [
+  {id:'s1',icon:'🧋',name:'一杯奶茶',desc:'快乐水时光',price:25},
+  {id:'s2',icon:'🎬',name:'看一部电影',desc:'放松娱乐时光',price:50},
+  {id:'s3',icon:'😴',name:'睡懒觉特权',desc:'多睡30分钟',price:35},
+  {id:'s4',icon:'🍜',name:'点一顿好吃的',desc:'吃你最想吃的',price:60},
+  {id:'s5',icon:'🛁',name:'泡澡时光',desc:'悠闲不设时限',price:40},
+  {id:'s6',icon:'📱',name:'刷手机1小时',desc:'无罪恶感刷视频',price:20},
+  {id:'s7',icon:'🎮',name:'玩游戏',desc:'全身心打游戏',price:30},
+  {id:'s8',icon:'🛍️',name:'买个小东西',desc:'给自己买礼物',price:80},
+  {id:'s9',icon:'😪',name:'摸鱼30分钟',desc:'光明正大地摸',price:18},
+  {id:'s10',icon:'🎵',name:'听音乐放空',desc:'戴耳机什么都不想',price:12},
+  {id:'s11',icon:'📚',name:'看喜欢的书',desc:'不是论文的那种',price:25},
+  {id:'s12',icon:'🍡',name:'吃零食',desc:'薯片或甜点',price:15},
+  {id:'s13',icon:'🌸',name:'散步30分钟',desc:'不带手机走走',price:20},
+  {id:'s14',icon:'💅',name:'做美甲',desc:'美丽的手指',price:100},
+  {id:'s15',icon:'🧸',name:'抱着探探',desc:'好好夸夸小乌龟',price:8},
+  {id:'s16',icon:'🎨',name:'随便涂涂画画',desc:'创作无压力',price:18},
+  {id:'s17',icon:'☕',name:'咖啡馆自习',desc:'换个地方学习',price:35},
+  {id:'s18',icon:'🏊',name:'去游泳',desc:'游泳放松',price:45},
+  {id:'s19',icon:'💆',name:'颈肩按摩',desc:'放松15分钟',price:30},
+  {id:'s20',icon:'🌙',name:'早睡特权',desc:'11点前睡觉',price:25},
+  {id:'s21',icon:'🍦',name:'买一个甜筒',desc:'路边随便吃',price:10},
+  {id:'s22',icon:'🐱',name:'撸猫30分钟',desc:'去宠物店撸猫',price:40},
+  {id:'s23',icon:'🌿',name:'绿植一盆',desc:'给自己买盆植物',price:70},
+  {id:'s24',icon:'🕯️',name:'香薰蜡烛',desc:'拼多多小香薰',price:30},
+  {id:'s25',icon:'📔',name:'手账本',desc:'好看的手账本',price:25},
+  {id:'s26',icon:'💎',name:'发卡发夹',desc:'拼多多小发卡',price:15},
+  {id:'s27',icon:'🧴',name:'护手霜',desc:'软软的护手霜',price:20},
+  {id:'s28',icon:'🎀',name:'发带',desc:'可爱的发带',price:15},
+  {id:'s29',icon:'🖊️',name:'好看的笔',desc:'文具控专属',price:20},
+  {id:'s30',icon:'🧁',name:'买个蛋糕',desc:'小小的甜蜜',price:50},
+];
+
+let G = {
+  coins:0, tasks:[], customRewards:[], monster:null, monsterHp:0,
+  streak:0, lastDate:null, timerSec:1200, timerTotal:1200,
+  timerOn:false, timerRef:null,
+};
+
+function save(){try{localStorage.setItem('qt2',JSON.stringify(G));}catch(e){}}
+function load(){try{const d=localStorage.getItem('qt2');if(d)G={...G,...JSON.parse(d)};}catch(e){}}
+
+function init(){
+  load();
+  const today=new Date().toDateString();
+  if(G.lastDate!==today){
+    G.tasks=G.tasks.map(t=>t.type==='daily'?{...t,done:false}:t);
+    if(G.lastDate){
+      const yest=new Date();yest.setDate(yest.getDate()-1);
+      G.streak=G.lastDate===yest.toDateString()?(G.streak||0)+1:0;
+    }
+    G.lastDate=today;save();
+  }
+  if(!G.monster)spawnMonster();
+  if(G.tasks.length===0){
+    G.tasks=[
+      {id:'t1',name:'写论文（至少一节）',type:'daily',coins:20,done:false},
+      {id:'t2',name:'去健身房',type:'daily',coins:15,done:false},
+      {id:'t3',name:'学数据库30分钟',type:'daily',coins:10,done:false},
+      {id:'t4',name:'早睡（12点前）',type:'daily',coins:10,done:false},
+    ];save();
+  }
+  render();
+}
+
+function spawnMonster(){
+  const m=MONSTERS[Math.floor(Math.random()*MONSTERS.length)];
+  G.monster=m;G.monsterHp=m.hp;save();
+}
+
+function render(){
+  document.getElementById('s-coins').textContent=G.coins;
+  document.getElementById('s-streak').textContent=G.streak||0;
+  document.getElementById('s-done').textContent=G.tasks.filter(t=>t.done).length;
+  renderTasks();renderMonster();renderShop();renderTimerTasks();
+}
+
+function taskHTML(t){
+  return`<div class="task-item">
+    <div class="task-check${t.done?' done':''}" onclick="doTask('${t.id}')">${t.done?'✓':''}</div>
+    <div class="task-info">
+      <div class="task-name${t.done?' done':''}">${t.name}</div>
+      <div class="task-meta">+${t.coins} 金币</div>
+    </div>
+    <button class="task-delete" onclick="delTask('${t.id}')">×</button>
+  </div>`;
+}
+
+function renderTasks(){
+  const dl=G.tasks.filter(t=>t.type==='daily');
+  const tl=G.tasks.filter(t=>t.type==='todo');
+  document.getElementById('daily-list').innerHTML=dl.length?dl.map(taskHTML).join(''):'<div class="empty">暂无每日任务</div>';
+  document.getElementById('todo-list').innerHTML=tl.length?tl.map(taskHTML).join(''):'<div class="empty">暂无待办事项</div>';
+}
+
+function doTask(id){
+  const t=G.tasks.find(x=>x.id===id);
+  if(!t||t.done)return;
+  t.done=true;
+  G.coins+=t.coins;
+  const dmg=Math.ceil(t.coins/2);
+  G.monsterHp=Math.max(0,G.monsterHp-dmg);
+  let icon='💰',title='任务完成！',sub=`+${t.coins} 金币，对怪物造成 ${dmg} 点伤害！`;
+  if(G.monsterHp<=0){
+    const drops=DROPS[G.monster.drop]||DROPS['普通宝箱'];
+    const drop=drops[Math.floor(Math.random()*drops.length)];
+    G.coins+=G.monster.reward;
+    icon='🎉';title=`${G.monster.name} 被打败！`;
+    sub=`额外获得 +${G.monster.reward} 金币\n神秘掉落：${drop}`;
+    setTimeout(()=>{spawnMonster();renderMonster();},800);
+  }
+  save();render();showPopup(icon,title,sub);
+}
+
+function delTask(id){G.tasks=G.tasks.filter(t=>t.id!==id);save();render();}
+
+function addTask(){
+  const name=document.getElementById('new-name').value.trim();
+  if(!name){toast('请输入任务名称');return;}
+  const type=document.getElementById('new-type').value;
+  const coins=parseInt(document.getElementById('new-coins').value)||10;
+  G.tasks.push({id:'t'+Date.now(),name,type,coins,done:false});
+  document.getElementById('new-name').value='';
+  save();render();toast('任务添加成功！');
+}
+
+function renderMonster(){
+  const m=G.monster;if(!m)return;
+  document.getElementById('m-emoji').textContent=m.emoji;
+  document.getElementById('m-name').textContent=m.name;
+  document.getElementById('m-level').textContent=m.level;
+  document.getElementById('m-reward').textContent=`击败奖励: +${m.reward}金币 · 掉落${m.drop}`;
+  const pct=Math.max(0,Math.round(G.monsterHp/m.hp*100));
+  const bar=document.getElementById('m-hpbar');
+  bar.style.width=pct+'%';
+  bar.style.background=pct>60?'#2ecc87':pct>30?'#f39c12':'#ff4757';
+  document.getElementById('m-hptext').textContent=`HP: ${G.monsterHp} / ${m.hp}`;
+}
+
+function renderShop(){
+  const all=[...SHOP,...G.customRewards];
+  document.getElementById('shop-grid').innerHTML=all.map(item=>`
+    <div class="shop-item">
+      <span class="shop-icon">${item.icon}</span>
+      <div class="shop-name">${item.name}</div>
+      <div class="shop-desc">${item.desc}</div>
+      <div class="shop-price">${item.price} 金币</div>
+      <button class="btn btn-sm btn-primary" onclick="buyItem('${item.id}','${item.name}',${item.price},'${item.icon}')">兑换</button>
+    </div>`).join('');
+}
+
+function buyItem(id,name,price,icon){
+  if(G.coins<price){toast('金币不足！');return;}
+  G.coins-=price;save();render();
+  showPopup(icon,'兑换成功！',`好好享受「${name}」吧～`);
+}
+
+function addReward(){
+  const name=document.getElementById('r-name').value.trim();
+  if(!name){toast('请输入奖励名称');return;}
+  const icon=document.getElementById('r-icon').value.trim()||'🎁';
+  const price=parseInt(document.getElementById('r-price').value)||30;
+  const desc=document.getElementById('r-desc').value.trim()||'自定义奖励';
+  G.customRewards.push({id:'c'+Date.now(),icon,name,desc,price});
+  document.getElementById('r-name').value='';
+  document.getElementById('r-icon').value='';
+  document.getElementById('r-desc').value='';
+  save();renderShop();toast('奖励添加成功！');
+}
+
+function renderTimerTasks(){
+  const sel=document.getElementById('timer-task');
+  const undone=G.tasks.filter(t=>!t.done);
+  sel.innerHTML='<option value="">选择关联任务（可选）</option>'+undone.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+}
+
+function setTimer(mins){
+  if(G.timerOn){clearInterval(G.timerRef);G.timerOn=false;}
+  G.timerSec=mins*60;G.timerTotal=mins*60;
+  document.getElementById('t-btn').textContent='开始';
+  document.getElementById('t-status').textContent='准备开始';
+  updateClock();
+}
+
+function toggleTimer(){
+  if(G.timerOn){
+    clearInterval(G.timerRef);G.timerOn=false;
+    document.getElementById('t-btn').textContent='继续';
+    document.getElementById('t-status').textContent='已暂停';
+  } else {
+    G.timerOn=true;
+    document.getElementById('t-btn').textContent='暂停';
+    document.getElementById('t-status').textContent='专注中...';
+    G.timerRef=setInterval(()=>{
+      G.timerSec--;
+      if(G.timerSec<=0){
+        clearInterval(G.timerRef);G.timerOn=false;G.timerSec=0;
+        document.getElementById('t-btn').textContent='开始';
+        document.getElementById('t-status').textContent='完成！';
+        const tid=document.getElementById('timer-task').value;
+        if(tid)doTask(tid);
+        else{G.coins+=5;save();render();showPopup('⏰','计时完成！','+5 金币奖励');}
+      }
+      updateClock();
+    },1000);
+  }
+}
+
+function resetTimer(){
+  clearInterval(G.timerRef);G.timerOn=false;
+  G.timerSec=G.timerTotal;
+  document.getElementById('t-btn').textContent='开始';
+  document.getElementById('t-status').textContent='准备开始';
+  updateClock();
+}
+
+function updateClock(){
+  const m=Math.floor(G.timerSec/60),s=G.timerSec%60;
+  document.getElementById('t-clock').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+}
+
+function switchTab(tab){
+  const tabs=['tasks','monster','timer','shop'];
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',tabs[i]===tab));
+  document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));
+  document.getElementById('sec-'+tab).classList.add('active');
+  if(tab==='timer')renderTimerTasks();
+}
+
+function showPopup(icon,title,sub){
+  document.getElementById('popup-icon').textContent=icon;
+  document.getElementById('popup-title').textContent=title;
+  document.getElementById('popup-sub').textContent=sub;
+  document.getElementById('overlay').classList.add('show');
+}
+function closePopup(){document.getElementById('overlay').classList.remove('show');}
+document.getElementById('overlay').onclick=function(e){if(e.target===this)closePopup();};
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+init();
+</script>
+</body>
+</html>
